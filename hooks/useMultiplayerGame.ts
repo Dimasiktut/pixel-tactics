@@ -87,17 +87,20 @@ export const useMultiplayerGame = () => {
     const createGame = useCallback(() => {
         setError(null);
         setScreen('loading');
-
-        generatedDeckRef.current = staticDeck;
-
-        const newRoomId = generateRoomId();
-        const newChannel = new BroadcastChannel(newRoomId);
         
-        channelRef.current = newChannel;
-        setRoomId(newRoomId);
-        setLocalPlayerId(PlayerID.Player1);
-        setScreen('lobby');
-        console.log(`Комната создана: ${newRoomId}. Ожидание Игрока 2.`);
+        // Short delay for better UX, allowing loading screen to be visible briefly
+        setTimeout(() => {
+            generatedDeckRef.current = staticDeck;
+            
+            const newRoomId = generateRoomId();
+            const newChannel = new BroadcastChannel(newRoomId);
+            
+            channelRef.current = newChannel;
+            setRoomId(newRoomId);
+            setLocalPlayerId(PlayerID.Player1);
+            setScreen('lobby');
+            console.log(`Комната создана: ${newRoomId}. Ожидание Игрока 2.`);
+        }, 500);
     }, []);
 
     const joinGame = useCallback((id: string) => {
