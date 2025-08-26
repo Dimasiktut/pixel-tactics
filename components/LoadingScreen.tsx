@@ -1,12 +1,9 @@
 import React from 'react';
 
-interface LoadingScreenProps {
-  // message?: string | null;
-}
-
-export const LoadingScreen: React.FC<LoadingScreenProps> = () => {
+export const LoadingScreen: React.FC = () => {
   const title = 'Подготовка к битве...';
   const subtitle = 'Герои занимают свои позиции.';
+
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white text-center p-4">

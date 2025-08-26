@@ -11,7 +11,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 export const generateImage = async (cardName: string): Promise<string> => {
   try {
     // A detailed prompt for better art style consistency
-    const prompt = `Pixel art, fantasy card game art, portrait of a ${cardName}. 8-bit style, vibrant colors, detailed character sprite.`;
+    const prompt = `Pixel art sprite for a fantasy trading card game character: ${cardName}. 16-bit style, vibrant, high contrast, detailed, full character portrait, centered, on a simple neutral background. no text, no border.`;
 
     const response = await ai.models.generateImages({
       model: 'imagen-3.0-generate-002',
@@ -21,6 +21,7 @@ export const generateImage = async (cardName: string): Promise<string> => {
         outputMimeType: 'image/png',
         // A 3:4 aspect ratio to match the card dimensions
         aspectRatio: '3:4',
+        negativePrompt: 'blurry, text, letters, watermark, signature, border, frame, ugly, deformed, noisy, jpeg artifacts, low quality',
       },
     });
 

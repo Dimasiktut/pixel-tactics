@@ -52,6 +52,8 @@ export const PlayerArea: React.FC<PlayerAreaProps> = ({
                 isTargetable={!!selectedUnit && selectedUnit.owner !== player.id}
                 dispatch={dispatch}
                 attacker={selectedUnit}
+                isLocalPlayer={isLocalPlayer}
+                isCurrentPlayer={isCurrentPlayer}
             />
             <div>
                 <h2 className={`text-lg md:text-xl font-bold ${isCurrentPlayer ? 'text-yellow-300' : 'text-gray-300'}`}>{player.name}</h2>
@@ -87,6 +89,8 @@ export const PlayerArea: React.FC<PlayerAreaProps> = ({
                             isSelected={selectedUnit?.id === unit?.id}
                             dispatch={dispatch}
                             attacker={selectedUnit}
+                            isLocalPlayer={isLocalPlayer}
+                            isCurrentPlayer={isCurrentPlayer}
                         />
                     ))}
                     </React.Fragment>
