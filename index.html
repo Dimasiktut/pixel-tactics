@@ -56,9 +56,24 @@
       .turn-indicator-animate {
         animation: slide-in-out 2.5s ease-in-out forwards;
       }
-    </style>
 
-<link rel="stylesheet" href="/index.css">
+      /* Custom scrollbar for card details */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 255, 255, 0.3);
+        border-radius: 20px;
+        border: transparent;
+      }
+      .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+      }
+    </style>
   <script type="importmap">
 {
   "imports": {
@@ -68,9 +83,10 @@
   }
 }
 </script>
-  <script type="module" crossorigin src="/pixel-tactics/assets/index-BwAA5mXF.js"></script>
+<link rel="stylesheet" href="/index.css">
 </head>
   <body class="bg-gray-900 text-white">
     <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
