@@ -11,11 +11,13 @@ interface CardViewProps {
 
 export const CardView: React.FC<CardViewProps> = ({ card, isSelected, onSelect, isPlayable }) => {
   const borderClass = isSelected ? 'border-yellow-400 ring-4 ring-yellow-400' : 'border-gray-600';
-  const cursorClass = isPlayable ? 'cursor-pointer' : 'cursor-not-allowed';
+  const dynamicClasses = isPlayable 
+    ? `cursor-pointer ${isSelected ? '' : 'glow-playable'}` 
+    : 'cursor-not-allowed opacity-70';
 
   return (
     <div
-      className={`relative w-24 h-32 bg-gray-800 rounded-md border-2 p-1 flex-shrink-0 text-center text-xs transform hover:scale-105 transition-all duration-200 ${borderClass} ${cursorClass}`}
+      className={`relative w-24 h-32 bg-gray-800 rounded-md border-2 p-1 flex-shrink-0 text-center text-xs transform hover:scale-105 transition-all duration-200 ${borderClass} ${dynamicClasses}`}
       onClick={isPlayable ? onSelect : undefined}
     >
       <div className="absolute inset-0 bg-black opacity-50"></div>

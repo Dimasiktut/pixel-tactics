@@ -14,10 +14,12 @@ function App(): React.ReactNode {
     dispatch,
     createGame,
     joinGame,
+    startAIGame,
     screen,
     roomId,
     localPlayerId,
     error,
+    isAIsTurn
   } = useMultiplayerGame();
   
   const [showInstructions, setShowInstructions] = useState(false);
@@ -32,6 +34,7 @@ function App(): React.ReactNode {
         <StartScreen 
           onCreateGame={createGame}
           onJoinGame={joinGame}
+          onStartAIGame={startAIGame}
           onShowInstructions={() => setShowInstructions(true)}
           error={error}
         />
@@ -63,6 +66,7 @@ function App(): React.ReactNode {
           state={state}
           dispatch={dispatch}
           localPlayerId={localPlayerId}
+          isAIsTurn={isAIsTurn}
         />
         {state.game.winner && (
           <WinnerModal winner={state.game.winner} onRestart={() => dispatch({ type: 'REQUEST_RESTART' })} />

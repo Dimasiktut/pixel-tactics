@@ -12,6 +12,8 @@ interface UnitSlotProps {
   isSelected: boolean;
   dispatch: React.Dispatch<GameAction>;
   attacker: Unit | null;
+  isLocalPlayer: boolean;
+  isCurrentPlayer: boolean;
 }
 
 export const UnitSlot: React.FC<UnitSlotProps> = ({
@@ -24,6 +26,8 @@ export const UnitSlot: React.FC<UnitSlotProps> = ({
   isSelected,
   dispatch,
   attacker,
+  isLocalPlayer,
+  isCurrentPlayer,
 }) => {
   const handleSlotClick = () => {
     if (isPlayable && !unit) {
@@ -33,7 +37,7 @@ export const UnitSlot: React.FC<UnitSlotProps> = ({
 
   const baseClasses = 'w-full h-32 flex items-center justify-center rounded-md transition-all duration-200';
   const emptySlotClasses = isPlayable
-    ? 'bg-green-800/50 border-2 border-dashed border-green-400 hover:bg-green-700/50 cursor-pointer'
+    ? 'bg-green-800/50 border-2 hover:bg-green-700/50 cursor-pointer pulse-playable-slot'
     : 'bg-black/30 border border-gray-700';
 
   if (!unit) {
@@ -48,6 +52,8 @@ export const UnitSlot: React.FC<UnitSlotProps> = ({
         isTargetable={isTargetable}
         dispatch={dispatch}
         attacker={attacker}
+        isLocalPlayer={isLocalPlayer}
+        isCurrentPlayer={isCurrentPlayer}
       />
     </div>
   );

@@ -3,11 +3,12 @@ import React, { useState } from 'react';
 interface StartScreenProps {
   onCreateGame: () => void;
   onJoinGame: (roomId: string) => void;
+  onStartAIGame: () => void;
   onShowInstructions: () => void;
   error: string | null;
 }
 
-export const StartScreen: React.FC<StartScreenProps> = ({ onCreateGame, onJoinGame, onShowInstructions, error }) => {
+export const StartScreen: React.FC<StartScreenProps> = ({ onCreateGame, onJoinGame, onStartAIGame, onShowInstructions, error }) => {
   const [roomId, setRoomId] = useState('');
   const [showJoinInput, setShowJoinInput] = useState(false);
 
@@ -49,6 +50,12 @@ export const StartScreen: React.FC<StartScreenProps> = ({ onCreateGame, onJoinGa
             </div>
         ) : (
              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                    onClick={onStartAIGame}
+                    className="px-10 py-5 bg-purple-600 text-white font-bold text-xl rounded-md hover:bg-purple-500 transition-colors border-b-4 border-purple-800 active:border-b-0 transform hover:scale-105"
+                >
+                    Играть с ИИ
+                </button>
                 <button
                     onClick={onCreateGame}
                     className="px-10 py-5 bg-green-600 text-white font-bold text-xl rounded-md hover:bg-green-500 transition-colors border-b-4 border-green-800 active:border-b-0 transform hover:scale-105"
