@@ -1,9 +1,11 @@
 
 
+
 import type { FullGameState, GameAction, Player, Unit, CardData, UnitEffect, EffectType } from '../types';
 import { GamePhase, PlayerID, Wave } from '../types';
 import { HAND_SIZE, LEADER_HEALTH, ACTIONS_PER_TURN, PLAYER1_NAME, PLAYER2_NAME, WAVE_ORDER } from '../constants';
 import { SKELETON_TOKEN, TURRET_TOKEN, GOBLIN_TOKEN, HYDRA_HEAD_TOKEN, STONE_WALL_TOKEN, ILLUSION_TOKEN, SPIDER_TOKEN, WOLF_TOKEN, LEGIONNAIRE_TOKEN, VAMPIRE_SPAWN_TOKEN, GHOUL_TOKEN, SHEEP_TOKEN, BOMB_TRAP_TOKEN } from './tokens';
+import { staticDeck } from '../services/staticCardData';
 
 // --- UTILITY FUNCTIONS ---
 
@@ -481,13 +483,27 @@ export const gameReducer = (state: FullGameState, action: GameAction): FullGameS
                 break;
             case 9:
                 if (position.wave === Wave.Flank) { const t = getUnitInFront(updatedPlayer, position.col); if(t) applyEffect(t, { type: 'DIVINE_SHIELD', duration: -1}); }
-                else if (position.wave === Wave.Rear) { const t = getUnitInFront(updatedPlayer, position.col); if(t) t.currentHealth = t.maxHealth; }
+                else if (position.wave === Wave.Rear) { 
+                    const targets = updatedPlayer.units.filter(u => u.currentHealth < u.maxHealth).sort((a,b) => (a.maxHealth - a.currentHealth) - (b.maxHealth - b.currentHealth)); 
+                    const target = targets.length > 0 ? targets[targets.length - 1] : null;
+                    if(target) {
+                        target.currentHealth = target.maxHealth;
+                        newLog = addLogEntry(newLog, `${newUnit.card.name} полностью излечивает ${target.card.name}!`);
+                    }
+                }
                 break;
             case 10:
                 for (let i=0; i < (position.wave === Wave.Rear ? 2:1); i++) if(updatedPlayer.units.length < maxUnits) {const s = findEmptySlot(updatedPlayer, Wave.Vanguard); if(s) updatedPlayer.units.push(createUnitFromCard(SKELETON_TOKEN, currentPlayerId, s));}
                 break;
             case 11:
-                if(position.wave === Wave.Flank) updatedPlayer.units.filter(u=>u.card.tribe==='Гоблин').forEach(u => applyEffect(u, {type: 'ATTACK_BUFF', value: 1, duration: -1}));
+                if(position.wave === Wave.Flank) {
+                    updatedPlayer.units.filter(u => u.card.tribe === 'Гоблин' || u.id === newUnit.id).forEach(u => {
+                        applyEffect(u, {type: 'ATTACK_BUFF', value: 1, duration: -1});
+                        u.maxHealth += 1;
+                        u.currentHealth += 1;
+                    });
+                    newLog = addLogEntry(newLog, `Гоблины воодушевлены Королем!`);
+                }
                 if(position.wave === Wave.Rear) for(let i=0; i < 3; i++) if(updatedPlayer.units.length < maxUnits) {const s = findEmptySlot(updatedPlayer, WAVE_ORDER[i]); if(s) updatedPlayer.units.push(createUnitFromCard(GOBLIN_TOKEN, currentPlayerId, s));}
                 break;
             case 12: if(position.wave === Wave.Rear) updatedPlayer.units.forEach(u => {if(u.id !== newUnit.id) applyEffect(u, {type: 'ATTACK_BUFF', value: 2, duration: 2})}); break;
@@ -500,7 +516,17 @@ export const gameReducer = (state: FullGameState, action: GameAction): FullGameS
                 if(position.wave === Wave.Rear) { newState.game.globalEffects[opponentPlayerId] = {...newState.game.globalEffects[opponentPlayerId], isHandVisible: true }; }
                 break;
             case 17:
-                if(position.wave === Wave.Vanguard) [...updatedPlayer.units, updatedPlayer.leader].filter(u => u.position.col === position.col-1 || u.position.col === position.col+1).forEach(u => {u.maxHealth+=2; u.currentHealth+=2;});
+                if(position.wave === Wave.Vanguard) {
+                    [...updatedPlayer.units, updatedPlayer.leader].filter(u => 
+                        u.id !== newUnit.id &&
+                        u.position.wave === newUnit.position.wave && 
+                        (u.position.col === position.col - 1 || u.position.col === position.col + 1)
+                    ).forEach(u => {
+                        u.maxHealth += 2; 
+                        u.currentHealth += 2;
+                        newLog = addLogEntry(newLog, `${u.card.name} получает +2 к здоровью от ${newUnit.card.name}.`);
+                    });
+                }
                 if(position.wave === Wave.Flank) { 
                     const t = opponent.units[Math.floor(Math.random()*opponent.units.length)]; 
                     if(t) {
@@ -508,7 +534,16 @@ export const gameReducer = (state: FullGameState, action: GameAction): FullGameS
                         newLog = addLogEntry(newLog, `${t.card.name} усыплен!`);
                     }
                 }
-                if(position.wave === Wave.Rear) { const t = updatedPlayer.units.filter(u=>u.id!==newUnit.id)[Math.floor(Math.random()*updatedPlayer.units.length)]; if(t && updatedPlayer.units.length < maxUnits) { const c = createUnitFromCard(t.card, updatedPlayer.id, position); c.currentHealth=1; updatedPlayer.units.push(c); }}
+                if(position.wave === Wave.Rear) {
+                    const targetToCopy = updatedPlayer.units.filter(u => u.id !== newUnit.id)[Math.floor(Math.random() * (updatedPlayer.units.length -1))];
+                    const emptySlot = findEmptySlot(updatedPlayer);
+                    if(targetToCopy && emptySlot && updatedPlayer.units.length < maxUnits) {
+                        const copy = createUnitFromCard(targetToCopy.card, updatedPlayer.id, emptySlot);
+                        copy.currentHealth = 1;
+                        updatedPlayer.units.push(copy);
+                        newLog = addLogEntry(newLog, `${newUnit.card.name} создает копию ${copy.card.name}!`);
+                    }
+                }
                 break;
             case 18: if(position.wave === Wave.Rear) { const s = findEmptySlot(opponent); if(s) newState.game.globalEffects.brokenCells = [...(newState.game.globalEffects.brokenCells || []), {position: s, turnsLeft: 2}];} break;
             case 22: if(position.wave === Wave.Flank) { const t = opponent.units[Math.floor(Math.random()*opponent.units.length)]; if(t) t.currentHealth -= (5 + abilityDamageBonus); } break;
@@ -516,7 +551,17 @@ export const gameReducer = (state: FullGameState, action: GameAction): FullGameS
                 if (position.wave === Wave.Rear) newState.game.globalEffects[opponentPlayerId] = { ...newState.game.globalEffects[opponentPlayerId], noCardsNextTurn: true };
                 break;
             case 24:
-                if (position.wave === Wave.Flank) { const t = opponent.units[Math.floor(Math.random()*opponent.units.length)]; if(t) { const s = opponent.units.filter(u=>u.id !== t.id)[Math.floor(Math.random()*opponent.units.length)]; if(s) { t.currentHealth -= getUnitTotalAttack(t, newState); newLog = addLogEntry(newLog, `${t.card.name} атакует ${s.card.name}!`);}} }
+                if (position.wave === Wave.Flank && opponent.units.length >= 2) {
+                    const attackerIndex = Math.floor(Math.random() * opponent.units.length);
+                    const attacker = opponent.units[attackerIndex];
+                    const otherUnits = opponent.units.filter((_, idx) => idx !== attackerIndex);
+                    const target = otherUnits[Math.floor(Math.random() * otherUnits.length)];
+                    if(attacker && target) {
+                        const damage = getUnitTotalAttack(attacker, newState);
+                        target.currentHealth -= damage;
+                        newLog = addLogEntry(newLog, `${newUnit.card.name} заставляет ${attacker.card.name} атаковать ${target.card.name} на ${damage} урона!`);
+                    }
+                }
                 if (position.wave === Wave.Rear) { const t = opponent.units[Math.floor(Math.random()*opponent.units.length)]; if(t) { t.effects.forEach(e => newUnit.effects.push(e)); }}
                 break;
             case 25:
@@ -525,7 +570,15 @@ export const gameReducer = (state: FullGameState, action: GameAction): FullGameS
                 break;
             case 26:
                 if(position.wave === Wave.Flank) { const t = updatedPlayer.units.filter(u=>u.id !== newUnit.id)[Math.floor(Math.random()*updatedPlayer.units.length)]; if(t) {const s=findEmptySlot(updatedPlayer); if(s) t.position=s;}}
-                if(position.wave === Wave.Rear) opponent.units.forEach(u => { const waveIdx = WAVE_ORDER.indexOf(u.position.wave); if(waveIdx > 0) u.position.wave = WAVE_ORDER[waveIdx-1]; });
+                if(position.wave === Wave.Rear) {
+                    opponent.units.forEach(u => {
+                        const waveIdx = WAVE_ORDER.indexOf(u.position.wave);
+                        if (waveIdx < 2) { 
+                            u.position.wave = WAVE_ORDER[waveIdx + 1];
+                        }
+                    });
+                    newLog = addLogEntry(newLog, `${newUnit.card.name} отталкивает всех врагов назад!`);
+                }
                 break;
             case 27: if(position.wave === Wave.Rear) opponent.leader.currentHealth -= (3 + abilityDamageBonus); break;
             case 28:
@@ -539,7 +592,14 @@ export const gameReducer = (state: FullGameState, action: GameAction): FullGameS
                  break;
             case 31: if(position.wave === Wave.Rear) { updatedPlayer.leader.currentHealth += 10; newUnit.currentHealth = 0; } break;
             case 32:
-                 if(position.wave === Wave.Flank) { const t = opponent.units[Math.floor(Math.random()*opponent.units.length)]; if(t) [newUnit.position, t.position] = [t.position, newUnit.position];}
+                 if(position.wave === Wave.Flank) {
+                    const target = opponent.units[Math.floor(Math.random() * opponent.units.length)];
+                    const emptySlotOnOpponentSide = findEmptySlot(opponent, target?.position.wave, target?.position.col);
+                    if(target && emptySlotOnOpponentSide) {
+                        target.position = emptySlotOnOpponentSide;
+                        newLog = addLogEntry(newLog, `${newUnit.card.name} перемещает ${target.card.name} в случайное место!`);
+                    }
+                 }
                  if(position.wave === Wave.Rear) for(let i=0; i<2; i++) if(updatedPlayer.units.length < maxUnits) {const s = findEmptySlot(updatedPlayer); if(s) updatedPlayer.units.push(createUnitFromCard(ILLUSION_TOKEN, updatedPlayer.id, s));}
                  break;
             case 33:
@@ -588,11 +648,15 @@ export const gameReducer = (state: FullGameState, action: GameAction): FullGameS
             case 42: if(position.wave === Wave.Rear) {const t=updatedPlayer.units.filter(u=>u.id !== newUnit.id)[Math.floor(Math.random()*updatedPlayer.units.length)]; if(t) applyEffect(t, {type:'LIFESTEAL', duration:2});} break;
             case 43:
                  if(position.wave === Wave.Flank) { 
-                    const t=updatedPlayer.units.filter(u=>u.id!==newUnit.id)[Math.floor(Math.random()*updatedPlayer.units.length)]; 
-                    if(t) { 
-                        t.originalCardOnTransform=t.card; 
-                        applyEffect(t, {type:'TRANSFORMED', duration:2, payload:{card:{...t.card, attack:8, health:8}}}); 
-                        newLog = addLogEntry(newLog, `${t.card.name} превращается в Огра!`);
+                    const target = updatedPlayer.units.filter(u => u.id !== newUnit.id)[Math.floor(Math.random() * (updatedPlayer.units.length - 1))];
+                    const ogreCard = staticDeck.find(c => c.id === 5) || { ...SKELETON_TOKEN, name: 'Огр', attack: 8, health: 8, id: 5 };
+                    if(target) { 
+                        target.originalCardOnTransform = target.card;
+                        applyEffect(target, {type: 'TRANSFORMED', duration: 2, payload: { card: ogreCard }});
+                        target.card = ogreCard;
+                        target.maxHealth = ogreCard.health;
+                        target.currentHealth = Math.min(target.currentHealth, target.maxHealth);
+                        newLog = addLogEntry(newLog, `${target.originalCardOnTransform.name} превращается в Огра!`);
                     }
                  }
                  if(position.wave === Wave.Rear) { if(Math.random()>0.5){const t=updatedPlayer.units[Math.floor(Math.random()*updatedPlayer.units.length)]; if(t)t.currentHealth+=5;} else {const t=opponent.units[Math.floor(Math.random()*opponent.units.length)]; if(t)t.currentHealth-=3;} }
@@ -606,14 +670,25 @@ export const gameReducer = (state: FullGameState, action: GameAction): FullGameS
             } break;
             case 45:
                  if(position.wave === Wave.Flank) newState.game.globalEffects[opponentPlayerId] = {...newState.game.globalEffects[opponentPlayerId], cardCostIncrease: 1};
-                 if(position.wave === Wave.Rear) { const t=opponent.units[Math.floor(Math.random()*opponent.units.length)]; if(t) { t.currentHealth = -999; opponent.banishedUnits.push(t); }}
+                 if(position.wave === Wave.Rear) { 
+                     const target = opponent.units[Math.floor(Math.random() * opponent.units.length)];
+                     if(target) {
+                         opponent.units = opponent.units.filter(u => u.id !== target.id);
+                         target.isRebirthingFor = 2; // Set duration for return (1 opponent turn)
+                         opponent.banishedUnits.push(target);
+                         newLog = addLogEntry(newLog, `${target.card.name} изгнан с поля на 1 ход!`);
+                     }
+                 }
                  break;
             case 46:
                  if(position.wave === Wave.Flank) {const t=updatedPlayer.units.find(u=>u.id!==newUnit.id && u.canAttack && u.attacksThisTurn < 1); if(t) t.attacksThisTurn = -1; } // Will attack twice
                  if(position.wave === Wave.Rear) updatedPlayer.actions += 1;
                  break;
             case 47:
-                 if(position.wave === Wave.Flank) { const t = updatedPlayer.units.find(u=>u.id!==newUnit.id && u.canAttack); if(t) t.attacksThisTurn = -1; }
+                 if(position.wave === Wave.Flank) {
+                     updatedPlayer.actions += 1;
+                     newLog = addLogEntry(newLog, `${newUnit.card.name} дарует дополнительное очко действия!`);
+                 }
                  if(position.wave === Wave.Rear) newState.game.globalEffects[opponentPlayerId] = {...newState.game.globalEffects[opponentPlayerId], cardCostIncrease: 99 };
                  break;
             case 48:

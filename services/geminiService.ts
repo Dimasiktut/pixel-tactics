@@ -21,6 +21,7 @@ export const generateImage = async (cardName: string): Promise<string> => {
         outputMimeType: 'image/png',
         // A 3:4 aspect ratio to match the card dimensions
         aspectRatio: '3:4',
+        negativePrompt: 'blurry, text, letters, watermark, signature, border, frame, ugly, deformed, noisy, jpeg artifacts, low quality',
       },
     });
 

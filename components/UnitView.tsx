@@ -113,9 +113,11 @@ export const UnitView: React.FC<UnitViewProps> = ({
       {unit.souls > 0 && <div className="absolute inset-0 rounded-md shadow-[0_0_15px_5px] shadow-purple-600/90 pointer-events-none animate-pulse" title={`Поглощено душ: ${unit.souls}`} />}
 
 
-      <div className="absolute inset-0 bg-black/50 group-hover:bg-black/80 transition-colors duration-200 z-10 p-1 overflow-hidden">
-        <p className="font-bold text-white text-[10px] leading-tight">{unit.card.name}</p>
-        <p className="text-gray-300 text-[7px] leading-[.9] mt-1 italic opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-normal">{abilityText}</p>
+      <div className="absolute inset-0 bg-black/50 group-hover:bg-black/80 transition-colors duration-200 z-10 p-1 flex flex-col overflow-hidden">
+        <p className="font-bold text-white text-[10px] leading-tight flex-shrink-0">{unit.card.name}</p>
+        <div className="flex-grow mt-1 overflow-y-auto custom-scrollbar pr-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <p className="text-gray-300 text-[9px] leading-snug italic whitespace-normal">{abilityText}</p>
+        </div>
       </div>
 
       <img src={unit.card.artUrl} alt={unit.card.name} className="absolute inset-0 w-full h-full object-cover rounded pixelated opacity-40" />
